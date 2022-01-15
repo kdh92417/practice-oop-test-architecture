@@ -5,75 +5,86 @@ class Store(ABC):
     @abstractmethod
     def __init__(self):
         self.name = ""
-        self.money = 0
-        self.products = {}
+        self._money = 0
+        self._products = {}
 
+    # 1. 상품 보여주기
     @abstractmethod
-    def set_money(self, money):
+    def show_product(self, product_id):
         pass
 
+    # 2. 상품을 주기
     @abstractmethod
-    def set_products(self, products):
+    def give_product(self, product_id):
         pass
 
+    # 3. 상품대금 받기
     @abstractmethod
-    def get_money(self):
-        pass
-
-    @abstractmethod
-    def get_products(self):
+    def take_money(self, money):
         pass
 
 
 class GrabStore(Store):
-    def __init__(self):
-        self.money = 0
+    def __init__(self, products):
+        self._money = 0
         self.name = "그랩마켓"
-        self.products = {
-            1: {"name": "키보드", "price": 30000},
-            2: {"name": "모니터", "price": 50000},
-        }
+        self._products = products
 
-    def set_money(self, money):
-        self.money = money
-
+    # 해당 매장의 상품 설정
     def set_products(self, products):
-        self.products = products
+        self._products = products
 
-    def get_money(self):
-        return self.money
+    # 해당 매장의 돈 설정
+    def set_money(self, money):
+        self._money = money
 
-    def get_products(self):
-        return self.products
+    # 싱픔 보여주기
+    def show_product(self, product_id):
+        return self._products[product_id]
+
+    # 상품 주기
+    def give_product(self, product_id):
+        self._products.pop(product_id)  # products에 product_id를 key로 가지는 value를 삭제한다.
+
+    # 상품 대금 결제
+    def take_money(self, money):
+        self._money += money
 
 
 class User:
-    # Store 추상클래스를 파라미터로 의존성 주입
-    def __init__(self, store: Store):
-        self.money = 0
-        self.store = GrabStore()
-        self.belongs = []
-
-    def set_money(self, money):
+    # User 객체를 생성할 때 돈과 스토어 객체 변수를 생성
+    def __init__(self, money, store: Store):
         self.money = money
-
-    def set_belongs(self, belongs):
-        self.belongs = belongs
-
-    def get_money(self):
-        return self.money
+        self.store = store
+        self.belongs = []
 
     def get_belongs(self):
         return self.belongs
 
-    def get_store(self):
-        return self.store
+    def show_product(self, product_id):
+        products = self.store.show_product(product_id=product_id)
+        return products
 
-    def see_product(self, product_id):
-        products = self.store.get_products()
-        return products[product_id]
+    def purchase_product(self, product_id):
+        product = self.show_product(product_id=product_id)
+        # 스토어 클래스 변수에 직접 접근하지 않고 스토어의 퍼블릭 메서드를 이용하여 클래스변수에 접근
+        if self.money >= product["price"]:
+            self.store.give_product(product_id=product_id) # 사용자가 꺼내지 않고 스토어에서 꺼내도록 변경
+            self.money -= product["price"]  # 사용자가 돈 내기
+            self.store.take_money(product['price'])  # 상점에서 돈 받기
+            self.belongs.append(product)
+            return product
+        else:
+            raise Exception("잔돈이 부족합니다")
 
 
 if __name__ == "__main__":
-    user_a = User(GrabStore)
-    print(user_a.store.get_products())
+    store = GrabStore(
+        products={
+            1: {"name": "키보드", "price": 30000},
+            2: {"name": "모니터", "price": 50000},
+        }
+    )
+    user = User(money=100000, store=store)
+    user.purchase_product(product_id=1)
+    print(user.get_belongs())
