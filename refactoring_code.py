@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 
 
+
+# 1. Delete take_money()
+# 2. Change method : git_product() -> sell_product
 class Store(ABC):
     @abstractmethod
     def __init__(self):
@@ -8,19 +11,13 @@ class Store(ABC):
         self._money = 0
         self._products = {}
 
-    # 1. 상품 보여주기
     @abstractmethod
     def show_product(self, product_id):
         pass
 
-    # 2. 상품을 주기
+    # git_product() -> sell_product
     @abstractmethod
-    def give_product(self, product_id):
-        pass
-
-    # 3. 상품대금 받기
-    @abstractmethod
-    def take_money(self, money):
+    def sell_product(self, product_id, money):
         pass
 
 
@@ -30,53 +27,101 @@ class GrabStore(Store):
         self.name = "그랩마켓"
         self._products = products
 
-    # 해당 매장의 상품 설정
     def set_products(self, products):
         self._products = products
 
-    # 해당 매장의 돈 설정
     def set_money(self, money):
         self._money = money
 
-    # 싱픔 보여주기
     def show_product(self, product_id):
         return self._products[product_id]
 
-    # 상품 주기
-    def give_product(self, product_id):
-        self._products.pop(product_id)  # products에 product_id를 key로 가지는 value를 삭제한다.
+    # Write sell_product method : give_product() -> sell_product()
+    def sell_product(self, product_id, money):
+
+        # Get product
+        product = self.show_product(product_id=product_id)
+
+        # Validation 코드 최소화
+        if not product:
+            raise Exception("The product dose not exist")
+
+        # Receive money to sell goods
+        self._take_money(money=money)
+
+        # Logic of sell goods
+        try:
+            _product = self._take_out_product(product_id=product_id)
+            return _product  # if the logic works normally, the product is returned
+        except Exception as e:
+            self._return_money(money)
+            raise e
+
+    # Take out the product
+    def _take_out_product(self, product_id):
+        return self._products.pop(product_id)
 
     # 상품 대금 결제
-    def take_money(self, money):
+    def _take_money(self, money):
         self._money += money
+
+    # 환불
+    def _return_money(self, money):
+        self._money -= money
 
 
 class User:
     # User 객체를 생성할 때 돈과 스토어 객체 변수를 생성
     def __init__(self, money, store: Store):
-        self.money = money
+        self._money = money
         self.store = store
-        self.belongs = []
+        self._belongs = []
+
+    def get_money(self):
+        return self._money
 
     def get_belongs(self):
-        return self.belongs
+        return self._belongs
 
     def show_product(self, product_id):
         products = self.store.show_product(product_id=product_id)
         return products
 
+    # change methods : give_product(), take_money() -> sell_product()
+    # Accessing properties with methods : self.money -= price (x) -> self._give_methods() (O)
     def purchase_product(self, product_id):
-        product = self.show_product(product_id=product_id)
-        # 스토어 클래스 변수에 직접 접근하지 않고 스토어의 퍼블릭 메서드를 이용하여 클래스변수에 접근
-        if self.money >= product["price"]:
-            self.store.give_product(product_id=product_id) # 사용자가 꺼내지 않고 스토어에서 꺼내도록 변경
-            self.money -= product["price"]  # 사용자가 돈 내기
-            self.store.take_money(product['price'])  # 상점에서 돈 받기
-            self.belongs.append(product)
-            return product
-        else:
-            raise Exception("잔돈이 부족합니다")
+        # Product to buy in the store
+        product = self.store.show_product(product_id=product_id)
+        price = product['price']
 
+        if self._money >= price:
+            self._give_money(price)  # Pay for product
+
+            # Logic of purchase
+            try:
+                my_product = self.store.sell_product(product_id=product_id, money=price)  # Product bought in the store
+                self._add_belongs(product)
+                return my_product
+
+            except Exception as e:
+                self._take_money(money=price)  # return money
+                print(f"There was a problem during your purchase {str(e)}")
+                raise e
+
+        else:
+            raise Exception("I don't have enough change")
+
+    # Add method : pay for product
+    def _give_money(self, money):
+        self._money -= money
+
+    # Add method : Take the money
+    def _take_money(self, money):
+        self._money += money
+
+    # Add method : Add product to belongs
+    def _add_belongs(self, product):
+        self._belongs.append(product)
 
 if __name__ == "__main__":
     store = GrabStore(
