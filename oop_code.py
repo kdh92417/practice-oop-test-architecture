@@ -41,7 +41,7 @@ class GrabStore(Store):
         self._money = money
 
     def show_product(self, product_id):
-        return self._products[product_id]
+        return self._products.get(product_id, None)
 
     def sell_product(self, product_id, money):
         product = self.show_product(product_id=product_id)
