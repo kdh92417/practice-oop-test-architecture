@@ -12,11 +12,10 @@ Unit Test
 """
 
 
-def test_show_product(requests_mock, adam_store, mock_products):
+def test_show_product(mock_api, adam_store, mock_products):
     # given
     product_id = 1
     mock_product = mock_products[product_id]
-    requests_mock.get(f"{API_URL}{product_id}", json=mock_product)
 
     # with mock.patch('requests.get') as mock_api:
     #     res = mock_api.return_value
@@ -49,11 +48,10 @@ def test_return_money(adam_store):
     assert adam_store._money == pre_money - price
 
 
-def test_take_out_product(requests_mock, adam_store, mock_products):
+def test_take_out_product(mock_api, adam_store, mock_products):
     # given
     product_id = 1
     mock_product = mock_products[product_id]
-    requests_mock.delete(url=f"{API_URL}{product_id}", json=mock_product)
 
     # when
     product = adam_store._take_out_product(product_id=product_id)
@@ -68,14 +66,14 @@ Integration Test
 """
 
 
-def test_sell_product_well(requests_mock, adam_store, mock_products):
+def test_sell_product_well(mock_api, adam_store, mock_products):
     product_id = 1
     pre_money = adam_store._money
     mock_product = mock_products[product_id]
 
     # mocking
-    requests_mock.get(f"{API_URL}{product_id}", json=mock_product)
-    requests_mock.delete(f"{API_URL}{product_id}", json=mock_product)
+    # requests_mock.get(f"{API_URL}{product_id}", json=mock_product)
+    # requests_mock.delete(f"{API_URL}{product_id}", json=mock_product)
 
     product = adam_store.show_product(product_id=product_id)
     _product = adam_store.sell_product(
@@ -85,13 +83,13 @@ def test_sell_product_well(requests_mock, adam_store, mock_products):
     # assert not adam_store.show_product(product_id=product_id)
 
 
-def test_sell_product_not_found(requests_mock, adam_store, mock_products):
+def test_sell_product_not_found(mock_api, adam_store, mock_products):
     product_id = 100
     mock_product = mock_products.get(product_id, None)
 
     # mocking
-    requests_mock.get(f"{API_URL}{product_id}", json=mock_product)
-    requests_mock.delete(f"{API_URL}{product_id}", json=mock_product)
+    # requests_mock.get(f"{API_URL}{product_id}", json=mock_product)
+    # requests_mock.delete(f"{API_URL}{product_id}", json=mock_product)
 
     with pytest.raises(Exception):
         adam_store.sell_product(product_id=product_id, money=0)

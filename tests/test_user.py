@@ -37,7 +37,7 @@ Integration Test
 """
 
 
-def test_purchase_product_well(user):
+def test_purchase_product_well(mock_api, user):
     # 1. 유저가 돈을 잘 냈는가?
     # 2. 유저의 주머니에 상품이 들어있는가?
 
@@ -51,7 +51,7 @@ def test_purchase_product_well(user):
     assert user.get_belongs() == [product]
 
 
-def test_purchase_product_expensive(user):
+def test_purchase_product_expensive(mock_api, user):
     product_id = 2  # Price : 5000000
 
     with pytest.raises(Exception):
